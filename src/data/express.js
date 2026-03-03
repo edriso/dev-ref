@@ -651,6 +651,1114 @@ POST   /api/v1/tours/:tourId/reviews     → Create review on tour`,
         },
       ],
     },
+
+    // ─── Section 5: Controllers & Handler Factory ─────────────────────
+    {
+      id: 'controllers',
+      title: 'Controllers & Handler Factory',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'The handler factory pattern eliminates repetitive CRUD code. Write generic functions once, then generate specific handlers for each model.',
+        },
+        {
+          type: 'heading',
+          content: 'Handler Factory — DRY CRUD',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'controllers/handlerFactory.js',
+          code: `const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
+const APIFeatures = require('../utils/apiFeatures');
+
+exports.deleteOne = (Model) =>
+  catchAsync(async (req, res, next) => {
+    const doc = await Model.findByIdAndDelete(req.params.id);
+
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404));
+    }
+
+    res.status(204).json({
+      status: 'success',
+      data: null,
+    });
+  });
+
+exports.updateOne = (Model) =>
+  catchAsync(async (req, res, next) => {
+    const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,           // Return updated document
+      runValidators: true, // Run schema validators on update
+    });
+
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404));
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: { data: doc },
+    });
+  });
+
+exports.createOne = (Model) =>
+  catchAsync(async (req, res, next) => {
+    const doc = await Model.create(req.body);
+
+    res.status(201).json({
+      status: 'success',
+      data: { data: doc },
+    });
+  });
+
+exports.getOne = (Model, popOptions) =>
+  catchAsync(async (req, res, next) => {
+    let query = Model.findById(req.params.id);
+    if (popOptions) query = query.populate(popOptions);
+    const doc = await query;
+
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404));
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: { data: doc },
+    });
+  });
+
+exports.getAll = (Model) =>
+  catchAsync(async (req, res, next) => {
+    // Allow nested GET reviews on tour
+    let filter = {};
+    if (req.params.tourId) filter = { tour: req.params.tourId };
+
+    const features = new APIFeatures(Model.find(filter), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    const doc = await features.query;
+
+    res.status(200).json({
+      status: 'success',
+      results: doc.length,
+      data: { data: doc },
+    });
+  });`,
+        },
+        {
+          type: 'heading',
+          content: 'Using the Factory in Controllers',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'controllers/tourController.js',
+          code: `const Tour = require('../models/tourModel');
+const factory = require('./handlerFactory');
+const catchAsync = require('../utils/catchAsync');
+
+// Factory-generated handlers (one line each!)
+exports.getAllTours = factory.getAll(Tour);
+exports.getTour = factory.getOne(Tour, { path: 'reviews' });
+exports.createTour = factory.createOne(Tour);
+exports.updateTour = factory.updateOne(Tour);
+exports.deleteTour = factory.deleteOne(Tour);
+
+// Custom handler for business logic
+exports.getTourStats = catchAsync(async (req, res, next) => {
+  const stats = await Tour.aggregate([
+    { $match: { ratingsAverage: { $gte: 4.5 } } },
+    {
+      $group: {
+        _id: { $toUpper: '$difficulty' },
+        numTours: { $sum: 1 },
+        avgRating: { $avg: '$ratingsAverage' },
+        avgPrice: { $avg: '$price' },
+      },
+    },
+    { $sort: { avgPrice: 1 } },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: { stats },
+  });
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'Nested Route Middleware',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'controllers/reviewController.js',
+          code: `const Review = require('../models/reviewModel');
+const factory = require('./handlerFactory');
+
+// Middleware: set tour & user IDs from nested route params
+exports.setTourUserIds = (req, res, next) => {
+  if (!req.body.tour) req.body.tour = req.params.tourId;
+  if (!req.body.user) req.body.user = req.user.id;
+  next();
+};
+
+exports.getAllReviews = factory.getAll(Review);
+exports.getReview = factory.getOne(Review);
+exports.createReview = factory.createOne(Review);
+exports.updateReview = factory.updateOne(Review);
+exports.deleteReview = factory.deleteOne(Review);`,
+        },
+        {
+          type: 'tip',
+          variant: 'tip',
+          content:
+            'Use the factory for standard CRUD, but write custom handlers for complex business logic like aggregation pipelines, file processing, or multi-step operations.',
+        },
+        {
+          type: 'heading',
+          content: 'Response Format Convention',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'JSend-style response format',
+          code: `// Success (single document)
+{ status: 'success', data: { data: doc } }
+
+// Success (list with count)
+{ status: 'success', results: 10, data: { data: docs } }
+
+// Success (delete — no body)
+// 204 No Content
+
+// Error
+{ status: 'fail', message: 'Error description' }
+
+// Server error
+{ status: 'error', message: 'Something went wrong' }`,
+        },
+      ],
+    },
+
+    // ─── Section 6: Models & Mongoose ─────────────────────────────────
+    {
+      id: 'models',
+      title: 'Models & Mongoose',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'Mongoose models define your data structure, validation rules, and business logic. Use schemas with built-in and custom validators, virtuals, hooks, and indexes.',
+        },
+        {
+          type: 'heading',
+          content: 'Schema Design with Validation',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'models/tourModel.js',
+          code: `const mongoose = require('mongoose');
+const slugify = require('slugify');
+
+const tourSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'A tour must have a name'],
+      unique: true,
+      trim: true,
+      maxlength: [40, 'Must be <= 40 characters'],
+      minlength: [10, 'Must be >= 10 characters'],
+    },
+    slug: String,
+    duration: { type: Number, required: [true, 'Must have a duration'] },
+    difficulty: {
+      type: String,
+      required: [true, 'Must have a difficulty'],
+      enum: {
+        values: ['easy', 'medium', 'difficult'],
+        message: 'Must be: easy, medium, or difficult',
+      },
+    },
+    ratingsAverage: {
+      type: Number,
+      default: 4.5,
+      min: [1, 'Rating must be >= 1.0'],
+      max: [5, 'Rating must be <= 5.0'],
+      set: (val) => Math.round(val * 10) / 10, // 4.666 → 4.7
+    },
+    price: { type: Number, required: [true, 'Must have a price'] },
+    priceDiscount: {
+      type: Number,
+      validate: {
+        validator: function (val) {
+          // 'this' only works on NEW document creation
+          return val < this.price;
+        },
+        message: 'Discount ({VALUE}) must be below regular price',
+      },
+    },
+    summary: { type: String, trim: true },
+    // Reference to another model
+    guides: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
+  },
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);`,
+        },
+        {
+          type: 'heading',
+          content: 'Indexes for Performance',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Compound index for common query patterns
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+
+// Unique index
+tourSchema.index({ slug: 1 });
+
+// Geospatial index (for location queries)
+tourSchema.index({ startLocation: '2dsphere' });`,
+        },
+        {
+          type: 'tip',
+          variant: 'tip',
+          content:
+            'Add indexes for fields you frequently query, sort, or filter by. Compound indexes support queries on any prefix of the indexed fields.',
+        },
+        {
+          type: 'heading',
+          content: 'Virtual Properties',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Computed field (not stored in DB)
+tourSchema.virtual('durationWeeks').get(function () {
+  return this.duration / 7;
+});
+
+// Virtual populate: reverse relationship
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',  // Field on Review that references Tour
+  localField: '_id',      // Field on Tour
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'Mongoose Middleware (Hooks)',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// DOCUMENT MIDDLEWARE — runs on .save() and .create()
+tourSchema.pre('save', function (next) {
+  this.slug = slugify(this.name, { lower: true });
+  next();
+});
+
+// QUERY MIDDLEWARE — runs on .find(), .findOne(), etc.
+tourSchema.pre(/^find/, function (next) {
+  this.find({ secretTour: { $ne: true } });
+  next();
+});
+
+// Auto-populate references on all find queries
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt',
+  });
+  next();
+});
+
+// AGGREGATION MIDDLEWARE — runs before .aggregate()
+tourSchema.pre('aggregate', function (next) {
+  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+  next();
+});
+
+const Tour = mongoose.model('Tour', tourSchema);
+module.exports = Tour;`,
+        },
+        {
+          type: 'heading',
+          content: 'User Model with Password Hashing',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'models/userModel.js',
+          code: `const mongoose = require('mongoose');
+const validator = require('validator');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: [true, 'Please tell us your name'] },
+  email: {
+    type: String,
+    required: [true, 'Please provide your email'],
+    unique: true,
+    lowercase: true,
+    validate: [validator.isEmail, 'Please provide a valid email'],
+  },
+  role: {
+    type: String,
+    enum: ['user', 'guide', 'lead-guide', 'admin'],
+    default: 'user',
+  },
+  password: {
+    type: String,
+    required: [true, 'Please provide a password'],
+    minlength: 8,
+    select: false, // Never include in query results
+  },
+  passwordConfirm: {
+    type: String,
+    required: [true, 'Please confirm your password'],
+    validate: {
+      validator: function (el) {
+        return el === this.password;
+      },
+      message: 'Passwords do not match!',
+    },
+  },
+  passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
+  active: { type: Boolean, default: true, select: false },
+});
+
+// Hash password before saving
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+
+  this.password = await bcrypt.hash(this.password, 12);
+  this.passwordConfirm = undefined; // Don't persist to DB
+  next();
+});
+
+// Set passwordChangedAt timestamp
+userSchema.pre('save', function (next) {
+  if (!this.isModified('password') || this.isNew) return next();
+  this.passwordChangedAt = Date.now() - 1000; // Ensure JWT is issued after
+  next();
+});
+
+// Exclude inactive users from queries
+userSchema.pre(/^find/, function (next) {
+  this.find({ active: { $ne: false } });
+  next();
+});
+
+// Instance methods
+userSchema.methods.correctPassword = async function (candidate, userPassword) {
+  return await bcrypt.compare(candidate, userPassword);
+};
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000, 10
+    );
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  return resetToken; // Send unhashed token to user
+};
+
+const User = mongoose.model('User', userSchema);
+module.exports = User;`,
+        },
+        {
+          type: 'heading',
+          content: 'Review Model with Static Methods',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'models/reviewModel.js',
+          code: `const mongoose = require('mongoose');
+const Tour = require('./tourModel');
+
+const reviewSchema = new mongoose.Schema({
+  review: { type: String, required: [true, 'Review cannot be empty!'] },
+  rating: { type: Number, min: 1, max: 5 },
+  createdAt: { type: Date, default: Date.now },
+  tour: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'Tour',
+    required: [true, 'Review must belong to a tour'],
+  },
+  user: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: [true, 'Review must belong to a user'],
+  },
+});
+
+// One review per user per tour
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
+
+// Static method: recalculate tour ratings
+reviewSchema.statics.calcAverageRatings = async function (tourId) {
+  const stats = await this.aggregate([
+    { $match: { tour: tourId } },
+    {
+      $group: {
+        _id: '$tour',
+        nRating: { $sum: 1 },
+        avgRating: { $avg: '$rating' },
+      },
+    },
+  ]);
+
+  if (stats.length > 0) {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: stats[0].nRating,
+      ratingsAverage: stats[0].avgRating,
+    });
+  } else {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: 0,
+      ratingsAverage: 4.5,
+    });
+  }
+};
+
+// Recalculate after save
+reviewSchema.post('save', function () {
+  this.constructor.calcAverageRatings(this.tour);
+});
+
+// Recalculate after update/delete
+reviewSchema.pre(/^findOneAnd/, async function (next) {
+  this.r = await this.findOne();
+  next();
+});
+
+reviewSchema.post(/^findOneAnd/, async function () {
+  await this.r.constructor.calcAverageRatings(this.r.tour);
+});
+
+const Review = mongoose.model('Review', reviewSchema);
+module.exports = Review;`,
+        },
+        {
+          type: 'tip',
+          variant: 'note',
+          content:
+            'Instance methods (schema.methods) work on documents. Static methods (schema.statics) work on the Model itself. Use statics for collection-wide operations like aggregation.',
+        },
+      ],
+    },
+
+    // ─── Section 7: Middleware Patterns ────────────────────────────────
+    {
+      id: 'middleware',
+      title: 'Middleware Patterns',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'Express middleware functions have access to req, res, and next. Master these patterns for clean, reusable middleware.',
+        },
+        {
+          type: 'heading',
+          content: 'catchAsync — Async Error Wrapper',
+        },
+        {
+          type: 'text',
+          content:
+            'The most important utility in any Express app. Wraps async route handlers so you never need try/catch blocks in controllers.',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'utils/catchAsync.js',
+          code: `module.exports = (fn) => {
+  return (req, res, next) => {
+    fn(req, res, next).catch(next);
+  };
+};
+
+// Usage in controllers:
+const catchAsync = require('../utils/catchAsync');
+
+exports.createTour = catchAsync(async (req, res, next) => {
+  const newTour = await Tour.create(req.body);
+  res.status(201).json({ status: 'success', data: { data: newTour } });
+  // No try/catch needed! Errors auto-forwarded to error handler
+});`,
+        },
+        {
+          type: 'tip',
+          variant: 'tip',
+          content:
+            'catchAsync replaces try/catch in every single async controller. Without it, you\'d need to wrap every handler — with it, errors automatically reach your global error handler.',
+        },
+        {
+          type: 'heading',
+          content: 'Query Alias Middleware',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Pre-set query params for common queries
+exports.aliasTopTours = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage,price';
+  req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
+  next();
+};
+
+// Route: GET /api/v1/tours/top-5-cheap
+router.route('/top-5-cheap').get(aliasTopTours, getAllTours);`,
+        },
+        {
+          type: 'heading',
+          content: 'Request Timestamp Middleware',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Add request timestamp to every request
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'Middleware for Nested Route Data',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Inject IDs from nested route params and auth
+exports.setTourUserIds = (req, res, next) => {
+  // Allow manual override, but default from route/auth
+  if (!req.body.tour) req.body.tour = req.params.tourId;
+  if (!req.body.user) req.body.user = req.user.id;
+  next();
+};`,
+        },
+        {
+          type: 'heading',
+          content: 'Higher-Order Middleware Factory',
+        },
+        {
+          type: 'text',
+          content:
+            'Use functions that return middleware when you need configurable behavior. This is how restrictTo works with different roles.',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Factory: returns middleware configured with specific roles
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('You do not have permission to perform this action', 403)
+      );
+    }
+    next();
+  };
+};
+
+// Usage: only admin and lead-guide can delete
+router.delete('/:id',
+  authController.protect,
+  authController.restrictTo('admin', 'lead-guide'),
+  tourController.deleteTour
+);`,
+        },
+        {
+          type: 'heading',
+          content: 'Image Upload Middleware',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `const multer = require('multer');
+const sharp = require('sharp');
+
+// Store in memory for processing
+const multerStorage = multer.memoryStorage();
+
+// Filter: only images
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Not an image! Please upload only images.', 400), false);
+  }
+};
+
+const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
+
+// Single file
+exports.uploadUserPhoto = upload.single('photo');
+
+// Multiple fields
+exports.uploadTourImages = upload.fields([
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 3 },
+]);
+
+// Resize after upload
+exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
+  if (!req.file) return next();
+
+  req.file.filename = \`user-\${req.user.id}-\${Date.now()}.jpeg\`;
+
+  await sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(\`public/img/users/\${req.file.filename}\`);
+
+  next();
+});`,
+        },
+      ],
+    },
+
+    // ─── Section 8: Error Handling ────────────────────────────────────
+    {
+      id: 'error-handling',
+      title: 'Error Handling',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'A robust error handling strategy distinguishes between operational errors (expected, like invalid input) and programming errors (bugs). Handle them differently in development vs production.',
+        },
+        {
+          type: 'heading',
+          content: 'Custom AppError Class',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'utils/appError.js',
+          code: `class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+
+    this.statusCode = statusCode;
+    this.status = \`\${statusCode}\`.startsWith('4') ? 'fail' : 'error';
+    this.isOperational = true; // Mark as operational (vs programming error)
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+module.exports = AppError;
+
+// Usage anywhere in the app:
+const AppError = require('../utils/appError');
+return next(new AppError('No tour found with that ID', 404));`,
+        },
+        {
+          type: 'heading',
+          content: 'Global Error Handler',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'controllers/errorController.js',
+          code: `const AppError = require('../utils/appError');
+
+// Database-specific error handlers
+const handleCastErrorDB = (err) => {
+  const message = \`Invalid \${err.path}: \${err.value}.\`;
+  return new AppError(message, 400);
+};
+
+const handleDuplicateFieldsDB = (err) => {
+  const value = err.errmsg.match(/(["'])(\\\\?.)*?\\1/)[0];
+  const message = \`Duplicate field value: \${value}. Use another value!\`;
+  return new AppError(message, 400);
+};
+
+const handleValidationErrorDB = (err) => {
+  const errors = Object.values(err.errors).map((el) => el.message);
+  const message = \`Invalid input data. \${errors.join('. ')}\`;
+  return new AppError(message, 400);
+};
+
+const handleJWTError = () =>
+  new AppError('Invalid token. Please log in again!', 401);
+
+const handleJWTExpiredError = () =>
+  new AppError('Your token has expired! Please log in again.', 401);
+
+// Development: send full error details
+const sendErrorDev = (err, req, res) => {
+  res.status(err.statusCode).json({
+    status: err.status,
+    error: err,
+    message: err.message,
+    stack: err.stack,
+  });
+};
+
+// Production: only send operational errors to client
+const sendErrorProd = (err, req, res) => {
+  if (err.isOperational) {
+    return res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message,
+    });
+  }
+
+  // Programming or unknown error: don't leak details
+  console.error('ERROR:', err);
+  res.status(500).json({
+    status: 'error',
+    message: 'Something went very wrong!',
+  });
+};
+
+module.exports = (err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+
+  if (process.env.NODE_ENV === 'development') {
+    sendErrorDev(err, req, res);
+  } else if (process.env.NODE_ENV === 'production') {
+    let error = { ...err };
+    error.message = err.message;
+
+    if (error.name === 'CastError') error = handleCastErrorDB(error);
+    if (error.code === 11000) error = handleDuplicateFieldsDB(error);
+    if (error.name === 'ValidationError')
+      error = handleValidationErrorDB(error);
+    if (error.name === 'JsonWebTokenError') error = handleJWTError();
+    if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
+
+    sendErrorProd(error, req, res);
+  }
+};`,
+        },
+        {
+          type: 'heading',
+          content: 'Catching Undefined Routes',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'app.js — after all routes',
+          code: `// Must be AFTER all route definitions
+app.all('*', (req, res, next) => {
+  next(new AppError(\`Can't find \${req.originalUrl} on this server!\`, 404));
+});
+
+// Error handling middleware (4 parameters!)
+app.use(globalErrorHandler);`,
+        },
+        {
+          type: 'heading',
+          content: 'Process-Level Error Handlers',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'server.js — process handlers',
+          code: `// Synchronous errors outside Express (must be FIRST)
+process.on('uncaughtException', (err) => {
+  console.log('UNCAUGHT EXCEPTION! Shutting down...');
+  console.log(err.name, err.message);
+  process.exit(1);
+});
+
+// Async errors outside Express (unhandled promise rejections)
+process.on('unhandledRejection', (err) => {
+  console.log('UNHANDLED REJECTION! Shutting down...');
+  console.log(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});`,
+        },
+        {
+          type: 'tip',
+          variant: 'warning',
+          content:
+            'Always close the server gracefully on unhandledRejection — let pending requests finish before shutting down. For uncaughtException, exit immediately since the app is in an undefined state.',
+        },
+      ],
+    },
+
+    // ─── Section 9: Authentication & Authorization ────────────────────
+    {
+      id: 'authentication',
+      title: 'Authentication & Authorization',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'JWT-based authentication with HTTP-only cookies. The protect middleware verifies tokens, and restrictTo controls role-based access.',
+        },
+        {
+          type: 'heading',
+          content: 'JWT Token Creation & Sending',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'controllers/authController.js',
+          code: `const jwt = require('jsonwebtoken');
+const { promisify } = require('util');
+const User = require('../models/userModel');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
+
+const signToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
+};
+
+const createSendToken = (user, statusCode, req, res) => {
+  const token = signToken(user._id);
+
+  res.cookie('jwt', token, {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,                      // Can't be accessed by JS
+    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+  });
+
+  // Remove password from output
+  user.password = undefined;
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: { user },
+  });
+};`,
+        },
+        {
+          type: 'heading',
+          content: 'Signup & Login',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `exports.signup = catchAsync(async (req, res, next) => {
+  // Only allow specific fields (prevent role injection!)
+  const newUser = await User.create({
+    name: req.body.name,
+    email: req.body.email,
+    password: req.body.password,
+    passwordConfirm: req.body.passwordConfirm,
+  });
+
+  createSendToken(newUser, 201, req, res);
+});
+
+exports.login = catchAsync(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  // 1) Check if email and password exist
+  if (!email || !password) {
+    return next(new AppError('Please provide email and password!', 400));
+  }
+
+  // 2) Check if user exists && password is correct
+  const user = await User.findOne({ email }).select('+password');
+
+  if (!user || !(await user.correctPassword(password, user.password))) {
+    return next(new AppError('Incorrect email or password', 401));
+  }
+
+  // 3) Send token to client
+  createSendToken(user, 200, req, res);
+});`,
+        },
+        {
+          type: 'tip',
+          variant: 'warning',
+          content:
+            'Never tell the user whether the email or password was wrong — always use a generic message like "Incorrect email or password" to prevent enumeration attacks.',
+        },
+        {
+          type: 'heading',
+          content: 'Route Protection Middleware',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `exports.protect = catchAsync(async (req, res, next) => {
+  // 1) Get token from header or cookie
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
+  }
+
+  if (!token) {
+    return next(
+      new AppError('You are not logged in! Please log in to get access.', 401)
+    );
+  }
+
+  // 2) Verify token
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  // 3) Check if user still exists
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return next(
+      new AppError('The user belonging to this token no longer exists.', 401)
+    );
+  }
+
+  // 4) Check if user changed password after token was issued
+  if (currentUser.changedPasswordAfter(decoded.iat)) {
+    return next(
+      new AppError('User recently changed password! Please log in again.', 401)
+    );
+  }
+
+  // GRANT ACCESS
+  req.user = currentUser;
+  next();
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'Role-Based Access Control',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // roles is an array like ['admin', 'lead-guide']
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('You do not have permission to perform this action', 403)
+      );
+    }
+    next();
+  };
+};
+
+// Usage in routes:
+router.delete(
+  '/:id',
+  authController.protect,           // Must be logged in
+  authController.restrictTo('admin', 'lead-guide'), // Must have role
+  tourController.deleteTour
+);`,
+        },
+        {
+          type: 'heading',
+          content: 'Password Reset Flow',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `exports.forgotPassword = catchAsync(async (req, res, next) => {
+  // 1) Get user by email
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError('There is no user with that email address.', 404));
+  }
+
+  // 2) Generate random reset token
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  // 3) Send token to user's email
+  const resetURL = \`\${req.protocol}://\${req.get('host')}/api/v1/users/resetPassword/\${resetToken}\`;
+
+  try {
+    await new Email(user, resetURL).sendPasswordReset();
+    res.status(200).json({
+      status: 'success',
+      message: 'Token sent to email!',
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again later!', 500)
+    );
+  }
+});
+
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  // 1) Get user based on hashed token
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() }, // Token not expired
+  });
+
+  // 2) If token valid and user exists, set new password
+  if (!user) {
+    return next(new AppError('Token is invalid or has expired', 400));
+  }
+
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save(); // Runs validators + pre-save hooks
+
+  // 3) Log the user in, send JWT
+  createSendToken(user, 200, req, res);
+});`,
+        },
+        {
+          type: 'tip',
+          variant: 'note',
+          content:
+            'Always hash reset tokens before storing in the database. Send the unhashed token to the user\'s email, then compare hashed versions when they use it.',
+        },
+      ],
+    },
   ],
 }
 
