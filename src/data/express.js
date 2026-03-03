@@ -1759,6 +1759,531 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
         },
       ],
     },
+
+    // ─── Section 10: Security Best Practices ──────────────────────────
+    {
+      id: 'security',
+      title: 'Security Best Practices',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'A production Express app needs multiple layers of security. Never rely on a single package — apply defense in depth.',
+        },
+        {
+          type: 'heading',
+          content: 'Security Middleware Stack',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'app.js — security setup',
+          code: `const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
+const cors = require('cors');
+
+// 1) Set security HTTP headers
+app.use(helmet());
+
+// 2) Rate limiting — prevent brute force
+const limiter = rateLimit({
+  max: 100,                      // Max requests per window
+  windowMs: 60 * 60 * 1000,     // 1 hour
+  message: 'Too many requests from this IP, try again in an hour!',
+});
+app.use('/api', limiter);
+
+// 3) Body parser with size limit — prevent large payloads
+app.use(express.json({ limit: '10kb' }));
+
+// 4) Data sanitization against NoSQL injection
+// Removes $ and . from req.body, req.query, req.params
+app.use(mongoSanitize());
+
+// 5) Prevent HTTP parameter pollution
+app.use(
+  hpp({
+    whitelist: ['duration', 'ratingsAverage', 'price', 'difficulty'],
+  })
+);
+
+// 6) CORS — configure per your needs
+app.use(cors());
+// For specific origin:
+// app.use(cors({ origin: 'https://yourfrontend.com' }));
+app.options('*', cors()); // Enable preflight for all routes`,
+        },
+        {
+          type: 'heading',
+          content: 'What Each Security Package Does',
+        },
+        {
+          type: 'list',
+          items: [
+            'helmet — Sets 15+ HTTP headers (CSP, HSTS, X-Frame-Options, etc.)',
+            'express-rate-limit — Limits repeated requests (login brute force, DDoS mitigation)',
+            'express-mongo-sanitize — Strips $ and . from input (prevents {$gt: ""} injection)',
+            'hpp — Cleans up duplicate query params (prevents ?sort=price&sort=name attacks)',
+            'cors — Controls which origins can access your API',
+          ],
+        },
+        {
+          type: 'heading',
+          content: 'Password Security Checklist',
+        },
+        {
+          type: 'list',
+          items: [
+            'Hash with bcrypt (cost factor 12+) — never store plain text',
+            'Use select: false on password field — never return in queries',
+            'Validate password confirmation at schema level',
+            'Clear passwordConfirm after hashing (don\'t persist it)',
+            'Track passwordChangedAt for token invalidation',
+            'Hash reset tokens before storing in DB',
+            'Set expiration on reset tokens (10 min)',
+          ],
+        },
+        {
+          type: 'heading',
+          content: 'JWT Security',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Cookie settings for JWT
+res.cookie('jwt', token, {
+  expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+  httpOnly: true,    // Prevents XSS access to cookie
+  secure: req.secure, // Only HTTPS in production
+  sameSite: 'strict', // CSRF protection
+});`,
+        },
+        {
+          type: 'tip',
+          variant: 'warning',
+          content:
+            'Never store JWTs in localStorage — it\'s vulnerable to XSS. Use httpOnly cookies instead. The browser sends them automatically with requests.',
+        },
+        {
+          type: 'heading',
+          content: 'Input Validation Tips',
+        },
+        {
+          type: 'list',
+          items: [
+            'Always limit JSON body size: express.json({ limit: "10kb" })',
+            'Use Mongoose schema validators for all fields',
+            'Whitelist allowed fields on signup (prevent role injection)',
+            'Use the validator library for email, URL, etc.',
+            'Sanitize user input before database queries',
+          ],
+        },
+      ],
+    },
+
+    // ─── Section 11: API Features ─────────────────────────────────────
+    {
+      id: 'api-features',
+      title: 'API Features',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'The APIFeatures class provides a chainable builder pattern for filtering, sorting, field selection, and pagination. One class handles all query operations.',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'utils/apiFeatures.js',
+          code: `class APIFeatures {
+  constructor(query, queryString) {
+    this.query = query;        // Mongoose query object
+    this.queryString = queryString; // req.query
+  }
+
+  filter() {
+    const queryObj = { ...this.queryString };
+    const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    excludedFields.forEach((el) => delete queryObj[el]);
+
+    // Advanced filtering: { duration: { gte: 5 } } → { duration: { $gte: 5 } }
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\\b(gte|gt|lte|lt)\\b/g, (match) => \`$\${match}\`);
+
+    this.query = this.query.find(JSON.parse(queryStr));
+    return this;
+  }
+
+  sort() {
+    if (this.queryString.sort) {
+      // ?sort=price,-ratingsAverage → 'price -ratingsAverage'
+      const sortBy = this.queryString.sort.split(',').join(' ');
+      this.query = this.query.sort(sortBy);
+    } else {
+      this.query = this.query.sort('-createdAt'); // Default sort
+    }
+    return this;
+  }
+
+  limitFields() {
+    if (this.queryString.fields) {
+      // ?fields=name,price,duration → 'name price duration'
+      const fields = this.queryString.fields.split(',').join(' ');
+      this.query = this.query.select(fields);
+    } else {
+      this.query = this.query.select('-__v'); // Exclude __v by default
+    }
+    return this;
+  }
+
+  paginate() {
+    const page = this.queryString.page * 1 || 1;
+    const limit = this.queryString.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    this.query = this.query.skip(skip).limit(limit);
+    return this;
+  }
+}
+
+module.exports = APIFeatures;`,
+        },
+        {
+          type: 'heading',
+          content: 'Usage in Controllers',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `const APIFeatures = require('../utils/apiFeatures');
+
+exports.getAllTours = catchAsync(async (req, res, next) => {
+  const features = new APIFeatures(Tour.find(), req.query)
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
+
+  const tours = await features.query;
+
+  res.status(200).json({
+    status: 'success',
+    results: tours.length,
+    data: { data: tours },
+  });
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'Example API Queries',
+        },
+        {
+          type: 'code',
+          language: 'text',
+          fileName: 'Query examples',
+          code: `# Filtering
+GET /api/v1/tours?difficulty=easy&price[lte]=500
+
+# Sorting (descending with -)
+GET /api/v1/tours?sort=-price,ratingsAverage
+
+# Field selection (projection)
+GET /api/v1/tours?fields=name,price,duration
+
+# Pagination
+GET /api/v1/tours?page=2&limit=10
+
+# Combined
+GET /api/v1/tours?difficulty=easy&sort=-price&fields=name,price&page=1&limit=5`,
+        },
+        {
+          type: 'tip',
+          variant: 'tip',
+          content:
+            'The APIFeatures class is model-agnostic. Use it with any Mongoose model — just pass Model.find() and req.query.',
+        },
+        {
+          type: 'heading',
+          content: 'Aggregation Pipeline (Complex Queries)',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `exports.getTourStats = catchAsync(async (req, res, next) => {
+  const stats = await Tour.aggregate([
+    { $match: { ratingsAverage: { $gte: 4.5 } } },
+    {
+      $group: {
+        _id: { $toUpper: '$difficulty' },
+        numTours: { $sum: 1 },
+        numRatings: { $sum: '$ratingsQuantity' },
+        avgRating: { $avg: '$ratingsAverage' },
+        avgPrice: { $avg: '$price' },
+        minPrice: { $min: '$price' },
+        maxPrice: { $max: '$price' },
+      },
+    },
+    { $sort: { avgPrice: 1 } },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: { stats },
+  });
+});`,
+        },
+      ],
+    },
+
+    // ─── Section 12: Environment & Config ─────────────────────────────
+    {
+      id: 'environment',
+      title: 'Environment & Config',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'Keep all environment-specific configuration in a .env file. Never commit secrets to version control.',
+        },
+        {
+          type: 'heading',
+          content: '.env Template',
+        },
+        {
+          type: 'code',
+          language: 'bash',
+          fileName: 'config.env',
+          code: `# App
+NODE_ENV=development
+PORT=3000
+
+# Database
+DATABASE=mongodb+srv://<USERNAME>:<PASSWORD>@cluster.mongodb.net/mydb
+DATABASE_PASSWORD=your_password_here
+
+# JWT
+JWT_SECRET=your-ultra-secure-secret-at-least-32-characters-long
+JWT_EXPIRES_IN=90d
+JWT_COOKIE_EXPIRES_IN=90
+
+# Email (development — use Mailtrap)
+EMAIL_HOST=smtp.mailtrap.io
+EMAIL_PORT=25
+EMAIL_USERNAME=your_mailtrap_username
+EMAIL_PASSWORD=your_mailtrap_password
+
+# Email (production — use SendGrid, Mailgun, etc.)
+SENDGRID_USERNAME=apikey
+SENDGRID_PASSWORD=your_sendgrid_api_key
+EMAIL_FROM=hello@yourdomain.com`,
+        },
+        {
+          type: 'heading',
+          content: 'Loading Environment Variables',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'server.js — at the top',
+          code: `const dotenv = require('dotenv');
+dotenv.config({ path: './config.env' });
+
+// Now process.env.PORT, process.env.JWT_SECRET, etc. are available
+const app = require('./app'); // Import AFTER env is loaded`,
+        },
+        {
+          type: 'tip',
+          variant: 'warning',
+          content:
+            'Load dotenv BEFORE importing app.js — otherwise any code in app.js that reads process.env will get undefined values.',
+        },
+        {
+          type: 'heading',
+          content: '.gitignore Essentials',
+        },
+        {
+          type: 'code',
+          language: 'text',
+          fileName: '.gitignore',
+          code: `node_modules/
+config.env
+.env
+*.env.local
+.DS_Store`,
+        },
+        {
+          type: 'heading',
+          content: 'Environment-Specific Behavior',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Logging only in development
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// Error details only in development
+if (process.env.NODE_ENV === 'development') {
+  sendErrorDev(err, req, res);
+} else {
+  sendErrorProd(err, req, res);
+}
+
+// Secure cookies only in production
+res.cookie('jwt', token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'npm Scripts',
+        },
+        {
+          type: 'code',
+          language: 'json',
+          fileName: 'package.json — scripts',
+          code: `{
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "start:prod": "NODE_ENV=production nodemon server.js",
+    "debug": "ndb server.js"
+  }
+}`,
+        },
+      ],
+    },
+
+    // ─── Section 13: Deployment Checklist ─────────────────────────────
+    {
+      id: 'deployment',
+      title: 'Deployment Checklist',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'Before deploying to production, make sure these items are in place. This checklist applies whether you\'re deploying to Heroku, Railway, Render, AWS, or any cloud platform.',
+        },
+        {
+          type: 'heading',
+          content: 'Production Middleware',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `const compression = require('compression');
+
+// Enable trust proxy (for platforms behind reverse proxies)
+app.enable('trust proxy');
+
+// Compress all text responses
+app.use(compression());`,
+        },
+        {
+          type: 'heading',
+          content: 'Graceful Shutdown',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'server.js — SIGTERM handler',
+          code: `// Handle SIGTERM (sent by hosting platforms for graceful shutdown)
+process.on('SIGTERM', () => {
+  console.log('SIGTERM RECEIVED. Shutting down gracefully.');
+  server.close(() => {
+    console.log('Process terminated.');
+  });
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'Pre-Deployment Checklist',
+        },
+        {
+          type: 'list',
+          items: [
+            'Set NODE_ENV=production in hosting environment',
+            'Use environment variables for ALL secrets (DB, JWT, API keys)',
+            'Enable compression middleware',
+            'Enable trust proxy if behind a reverse proxy',
+            'Set up rate limiting for API routes',
+            'Enable all security middleware (helmet, mongoSanitize, hpp)',
+            'Configure CORS for your frontend domain specifically',
+            'Set appropriate JWT expiration times',
+            'Add SIGTERM handler for graceful shutdown',
+            'Remove console.log statements (use proper logging)',
+            'Set up error monitoring (Sentry, LogRocket, etc.)',
+            'Configure a process manager (PM2) or use platform\'s built-in',
+          ],
+        },
+        {
+          type: 'heading',
+          content: 'Production Environment Variables',
+        },
+        {
+          type: 'code',
+          language: 'bash',
+          fileName: 'Production env vars (set in hosting dashboard)',
+          code: `NODE_ENV=production
+PORT=3000
+DATABASE=mongodb+srv://...
+DATABASE_PASSWORD=...
+JWT_SECRET=long-random-secret-min-32-chars
+JWT_EXPIRES_IN=90d
+JWT_COOKIE_EXPIRES_IN=90
+SENDGRID_USERNAME=apikey
+SENDGRID_PASSWORD=...
+EMAIL_FROM=noreply@yourdomain.com`,
+        },
+        {
+          type: 'heading',
+          content: 'Heroku-Specific Setup',
+        },
+        {
+          type: 'code',
+          language: 'bash',
+          fileName: 'Heroku deployment commands',
+          code: `# Login and create app
+heroku login
+heroku create your-app-name
+
+# Set environment variables
+heroku config:set NODE_ENV=production
+heroku config:set JWT_SECRET=your-secret-here
+heroku config:set DATABASE=your-mongodb-connection-string
+
+# Deploy
+git push heroku main
+
+# View logs
+heroku logs --tail`,
+        },
+        {
+          type: 'tip',
+          variant: 'note',
+          content:
+            'Always test your production build locally first with NODE_ENV=production to catch environment-specific issues before deploying.',
+        },
+        {
+          type: 'heading',
+          content: 'Engine Specification',
+        },
+        {
+          type: 'code',
+          language: 'json',
+          fileName: 'package.json — engines',
+          code: `{
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}`,
+        },
+      ],
+    },
   ],
 }
 
