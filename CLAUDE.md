@@ -8,6 +8,7 @@ A personal reference web app — a "cheat sheet" site for quickly looking up bes
 - react-router-dom (client-side routing)
 - react-syntax-highlighter (code blocks, Atom One Dark theme)
 - lucide-react (icons)
+- Inter font (Google Fonts)
 
 ## Architecture
 
