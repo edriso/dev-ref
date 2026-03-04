@@ -99,6 +99,19 @@ Light/dark theme using CSS custom properties + Tailwind v4 `@theme`. Variables d
 - Semantic color classes: `bg-bg`, `bg-bg-alt`, `bg-bg-hover`, `text-text`, `text-text-body`, `text-text-sub`, `text-text-muted`, `border-border`, `border-border-sub`
 - Code blocks (`CodeBlock`, `FolderTree`, `CopyButton`) stay dark in both themes
 
+## Performance: Lazy Syntax Highlighting
+
+`CodeBlock.jsx` uses an `IntersectionObserver` to defer syntax highlighting until a code block is near the viewport.
+
+**The problem:** `react-syntax-highlighter` parses and colorizes every code block when it mounts. On a page with dozens of code blocks (e.g. clicking "Expand All"), the browser has to process them all at once. This blocks the main thread and freezes the UI for a noticeable amount of time.
+
+**The solution:** Each code block starts as a plain `<pre>` with unstyled text (cheap to render). An `IntersectionObserver` watches the element and triggers syntax highlighting only when the block is within 200px of the viewport. Once highlighted, the observer disconnects — it only runs once per block.
+
+**Why the user doesn't notice:** The 200px `rootMargin` means highlighting happens just before the block scrolls into view, so by the time the user sees it, it's already colorized. And since users can only read one screen at a time, there's no reason to highlight off-screen code.
+
+**Before:** Expanding all sections → browser freezes while highlighting every code block.
+**After:** Expanding all sections → instant, code blocks highlight as you scroll to them.
+
 ## Conventions
 
 - Components use named exports
