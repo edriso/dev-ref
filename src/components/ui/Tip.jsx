@@ -3,9 +3,9 @@ import { Lightbulb, AlertTriangle, Info } from 'lucide-react'
 const variants = {
   tip: {
     icon: Lightbulb,
-    border: 'border-emerald-500/40',
-    bg: 'bg-emerald-500/5',
-    iconColor: 'text-emerald-400',
+    border: 'border-accent/40',
+    bg: 'bg-accent/5',
+    iconColor: 'text-accent',
     label: 'Tip',
   },
   warning: {

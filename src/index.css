@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #030712;
-  --bg-alt: #111827;
-  --bg-hover: #1f2937;
-  --text: #f3f4f6;
-  --text-body: #d1d5db;
-  --text-sub: #9ca3af;
-  --text-muted: #4b5563;
-  --border: #1f2937;
-  --border-sub: #374151;
-  --scrollbar: #374151;
+  --bg: #181a20;
+  --bg-alt: #1e2128;
+  --bg-hover: #2a2e36;
+  --text: #e4e8ee;
+  --text-body: #c5c9d2;
+  --text-sub: #8b919c;
+  --text-muted: #515663;
+  --border: #2a2e36;
+  --border-sub: #383d47;
+  --scrollbar: #383d47;
+  --accent: #98c379;
+  --accent-dark: #7ea85e;
 }
 
 [data-theme="light"] {
@@ -24,6 +26,8 @@
   --border: #e2e8f0;
   --border-sub: #cbd5e1;
   --scrollbar: #cbd5e1;
+  --accent: #4d8a34;
+  --accent-dark: #3d7229;
 }
 
 @theme {
@@ -37,6 +41,8 @@
   --color-text-muted: var(--text-muted);
   --color-border: var(--border);
   --color-border-sub: var(--border-sub);
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
 }
 
 html {
@@ -68,7 +74,7 @@ html {
 
 /* Better focus rings */
 :focus-visible {
-  outline: 2px solid #10b981;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -121,6 +127,7 @@ html {
 .card-stagger > *:nth-child(10) { animation-delay: 450ms; }
 .card-stagger > *:nth-child(11) { animation-delay: 500ms; }
 .card-stagger > *:nth-child(12) { animation-delay: 550ms; }
+.card-stagger > *:nth-child(13) { animation-delay: 600ms; }
 
 /* Section content reveal */
 @keyframes section-reveal {
@@ -164,7 +171,7 @@ pre::-webkit-scrollbar-track {
 }
 
 pre::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: #3e4451;
   border-radius: 3px;
 }
 

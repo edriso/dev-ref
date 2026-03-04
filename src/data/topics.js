@@ -1,4 +1,4 @@
-import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database, Shield, FlaskConical, GitBranch, Cpu } from 'lucide-react'
+import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database, Shield, FlaskConical, GitBranch, Cpu, Globe } from 'lucide-react'
 
 const topics = [
   // ─── Full Stack ─────────────────────────────────────────────────
@@ -17,7 +17,15 @@ const topics = [
     description: 'A JavaScript library for building user interfaces with components',
     icon: Atom,
     color: 'cyan',
-    related: ['typescript', 'mern', 'css', 'testing'],
+    related: ['nextjs', 'typescript', 'mern', 'css', 'testing'],
+  },
+  {
+    id: 'nextjs',
+    name: 'Next.js',
+    description: 'App Router, server components, data fetching, and full-stack React patterns',
+    icon: Globe,
+    color: 'slate',
+    related: ['react', 'typescript', 'mern', 'nodejs'],
   },
   // ─── Backend ────────────────────────────────────────────────────
   {

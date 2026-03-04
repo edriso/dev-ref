@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, Sun, Moon, Monitor, Search } from 'lucide-react'
+import { BookOpen, Sun, Moon, Monitor, Search, Keyboard } from 'lucide-react'
 
 function getSystemTheme() {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
@@ -15,7 +15,7 @@ function applyTheme(preference) {
   }
 }
 
-function Navbar({ onSearchOpen }) {
+function Navbar({ onSearchOpen, onShortcutsOpen }) {
   const [preference, setPreference] = useState(() => {
     return localStorage.getItem('theme') || 'dark'
   })
@@ -57,7 +57,7 @@ function Navbar({ onSearchOpen }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link
           to="/"
-          className="flex items-center gap-2 text-lg font-bold hover:text-emerald-400 transition-colors"
+          className="flex items-center gap-2 text-lg font-bold hover:text-accent transition-colors"
         >
           <BookOpen size={20} />
           <span className="hidden sm:inline">Best Practice Code</span>
@@ -77,6 +77,16 @@ function Navbar({ onSearchOpen }) {
             </kbd>
           </button>
 
+          {/* Keyboard shortcuts */}
+          <button
+            onClick={onShortcutsOpen}
+            className="hidden sm:flex rounded-md p-2 text-text-sub hover:text-text hover:bg-bg-hover transition-colors cursor-pointer"
+            aria-label="Keyboard shortcuts"
+            title="Keyboard shortcuts (?)"
+          >
+            <Keyboard size={18} />
+          </button>
+
           {/* Theme toggle */}
           <button
             onClick={cycleTheme}
@@ -85,11 +95,6 @@ function Navbar({ onSearchOpen }) {
             title={label}
           >
             <Icon size={20} />
-            {preference === 'auto' && (
-              <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-text-muted leading-none">
-                A
-              </span>
-            )}
           </button>
         </div>
       </div>

@@ -17,7 +17,7 @@ function Sidebar({ sections }) {
               href={`#${section.id}`}
               className={`block rounded-md px-3 py-2 text-sm transition-colors ${
                 activeId === section.id
-                  ? 'bg-emerald-500/10 text-emerald-400 font-medium'
+                  ? 'bg-accent/10 text-accent font-medium'
                   : 'text-text-sub hover:text-text hover:bg-bg-hover/50'
               }`}
             >

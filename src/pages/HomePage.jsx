@@ -87,20 +87,34 @@ const colorMap = {
     hoverText: 'group-hover:text-red-400',
     badge: 'bg-red-500/10 text-red-400',
   },
+  slate: {
+    iconBg: 'bg-slate-500/10',
+    iconText: 'text-slate-400',
+    hoverBorder: 'hover:border-slate-500/50',
+    hoverText: 'group-hover:text-slate-400',
+    badge: 'bg-slate-500/10 text-slate-400',
+  },
 }
 
 function HomePage() {
   return (
     <main className="max-w-5xl mx-auto px-6 py-20">
-      <div className="text-center mb-16 animate-fade-up">
-        <div className="inline-flex rounded-full bg-emerald-500/10 p-4 mb-6">
-          <Code size={32} className="text-emerald-400" />
+      <div className="relative overflow-hidden text-center mb-16 animate-fade-up">
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full blur-3xl pointer-events-none"
+          style={{ background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)', opacity: 0.07 }}
+          aria-hidden="true"
+        />
+        <div className="relative">
+          <div className="inline-flex rounded-full bg-accent/10 p-4 mb-6">
+            <Code size={32} className="text-accent" />
+          </div>
+          <h1 className="text-4xl font-bold mb-4">Best Practice Code</h1>
+          <p className="text-lg text-text-sub max-w-2xl mx-auto">
+            A personal reference for best practices, folder structures, conventions,
+            packages, and code patterns for web development.
+          </p>
         </div>
-        <h1 className="text-4xl font-bold mb-4">Best Practice Code</h1>
-        <p className="text-lg text-text-sub max-w-2xl mx-auto">
-          A personal reference for best practices, folder structures, conventions,
-          packages, and code patterns for web development.
-        </p>
       </div>
 
       <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-6">

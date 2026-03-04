@@ -16,11 +16,11 @@ function CopyLinkButton({ sectionId }) {
   return (
     <button
       onClick={handleCopy}
-      className="opacity-0 group-hover:opacity-100 shrink-0 rounded p-1 text-text-muted hover:text-emerald-400 hover:bg-bg-hover/50 transition-all cursor-pointer"
+      className="opacity-0 group-hover:opacity-100 shrink-0 rounded p-1 text-text-muted hover:text-accent hover:bg-bg-hover/50 transition-all cursor-pointer"
       title="Copy link to section"
       aria-label="Copy link to section"
     >
-      {copied ? <Check size={16} className="text-emerald-400" /> : <LinkIcon size={16} />}
+      {copied ? <Check size={16} className="text-accent" /> : <LinkIcon size={16} />}
     </button>
   )
 }
@@ -51,7 +51,7 @@ function SectionRenderer({ section, index, isExpanded = true, onToggle }) {
         </span>
         <h2
           className={`text-2xl font-bold text-text${
-            isCollapsible ? ' group-hover:text-emerald-400 transition-colors' : ''
+            isCollapsible ? ' group-hover:text-accent transition-colors' : ''
           }`}
         >
           {section.title}

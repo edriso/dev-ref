@@ -84,7 +84,7 @@ function MobileNav({ sections }) {
               onClick={() => handleSelect(section.id)}
               className={`w-full text-left rounded-md px-3 py-2.5 text-sm transition-colors cursor-pointer ${
                 activeId === section.id
-                  ? 'bg-emerald-500/10 text-emerald-400 font-medium'
+                  ? 'bg-accent/10 text-accent font-medium'
                   : 'text-text-sub hover:text-text hover:bg-bg-hover/50'
               }`}
             >

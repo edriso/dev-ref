@@ -139,7 +139,7 @@ function SearchModal({ open, onClose }) {
                     onClick={() => goToResult(result)}
                     className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors cursor-pointer ${
                       i === selectedIndex
-                        ? 'bg-emerald-500/10 text-emerald-400'
+                        ? 'bg-accent/10 text-accent'
                         : 'text-text-sub hover:bg-bg-hover/50 hover:text-text'
                     }`}
                     role="option"
@@ -149,7 +149,7 @@ function SearchModal({ open, onClose }) {
                     <div className="flex-1 min-w-0">
                       <span className="text-text-muted text-xs">{result.topicName}</span>
                       <ArrowRight size={10} className="inline mx-1 text-text-muted" />
-                      <span className={i === selectedIndex ? 'text-emerald-400' : 'text-text'}>
+                      <span className={i === selectedIndex ? 'text-accent' : 'text-text'}>
                         {result.sectionTitle}
                       </span>
                     </div>

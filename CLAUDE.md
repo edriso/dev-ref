@@ -38,20 +38,23 @@ src/
       SectionRenderer.jsx     # Section heading + content blocks
       CopyButton.jsx          # Clipboard copy with feedback
       ScrollToTop.jsx         # Scroll to top on route change
+      KeyboardShortcuts.jsx   # Keyboard shortcuts help modal
+      ReadingProgress.jsx     # Fixed reading progress bar
 
   data/
-    topics.js             # Registry: { id, name, description, icon, color }
-    express.js                # Express.js content (17 sections)
-    react.js                  # React.js content (17 sections)
-    mern.js                   # MERN Stack content (16 sections)
-    javascript.js             # JavaScript & OOP content (12 sections)
-    typescript.js             # TypeScript content (12 sections)
-    nodejs.js                 # Node.js core content (12 sections)
-    testing.js                # Testing content (12 sections)
-    git.js                    # Git & GitHub content (12 sections)
-    css.js                    # Advanced CSS content (12 sections)
-    html.js                   # HTML Semantic content (10 sections)
-    databases.js              # Databases with Express.js content (16 sections)
+    topics.js                 # Registry: { id, name, description, icon, color }
+    mern.js                   # MERN Stack content (17 sections)
+    react.js                  # React.js content (18 sections)
+    nextjs.js                 # Next.js App Router content (13 sections)
+    nodejs.js                 # Node.js core content (14 sections)
+    express.js                # Express.js content (18 sections)
+    databases.js              # Databases with Express.js content (17 sections)
+    javascript.js             # JavaScript & OOP content (13 sections)
+    typescript.js             # TypeScript content (14 sections)
+    html.js                   # HTML Semantic content (11 sections)
+    css.js                    # Advanced CSS content (13 sections)
+    testing.js                # Testing content (13 sections)
+    git.js                    # Git & GitHub content (13 sections)
 
   pages/
     HomePage.jsx              # Landing with topic cards
@@ -60,6 +63,7 @@ src/
 
   hooks/
     useActiveSection.js       # IntersectionObserver for scroll spy
+    useReadingProgress.js     # Scroll progress tracker (rAF-throttled)
 ```
 
 ## Routes
@@ -101,6 +105,7 @@ Light/dark theme using CSS custom properties + Tailwind v4 `@theme`. Variables d
 
 - Toggle via `data-theme="light"` on `<html>`, persisted in `localStorage` key `theme`
 - Semantic color classes: `bg-bg`, `bg-bg-alt`, `bg-bg-hover`, `text-text`, `text-text-body`, `text-text-sub`, `text-text-muted`, `border-border`, `border-border-sub`
+- Accent color: `text-accent`, `bg-accent/10`, `border-accent/50` — Atom One Dark green (#98c379 dark, #4d8a34 light)
 - Code blocks (`CodeBlock`, `FolderTree`, `CopyButton`) stay dark in both themes
 
 ## Performance: Lazy Syntax Highlighting

@@ -25,7 +25,7 @@ function NotFoundPage() {
           </button>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium hover:bg-emerald-500 transition-colors text-white"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent-dark px-5 py-2.5 text-sm font-medium hover:bg-accent transition-colors text-white"
           >
             <Home size={16} />
             Home

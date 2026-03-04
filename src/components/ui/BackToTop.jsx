@@ -21,7 +21,7 @@ function BackToTop() {
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 right-6 z-40 flex items-center gap-1.5 rounded-full bg-bg-hover border border-border-sub px-4 py-2.5 text-sm text-text-body shadow-lg hover:bg-border-sub hover:text-text transition-colors cursor-pointer"
+      className="fixed bottom-6 right-6 z-40 flex items-center gap-1.5 rounded-full bg-bg-hover border border-border-sub px-4 py-2.5 text-sm text-text-body shadow-lg hover:bg-accent/15 hover:text-accent hover:border-accent/30 transition-colors cursor-pointer"
       aria-label="Scroll to top"
     >
       <ArrowUp size={16} />

@@ -3,12 +3,28 @@ import { useState, useMemo, useEffect, useCallback, useTransition } from 'react'
 import { ListCollapse, List, Loader2 } from 'lucide-react'
 import topics from '../data/topics'
 import DocLayout from '../components/layout/DocLayout'
+import { ReadingProgress } from '../components/ui/ReadingProgress'
 import SectionRenderer from '../components/ui/SectionRenderer'
 import NotFoundPage from './NotFoundPage'
 
 const STORAGE_KEY = 'viewMode'
 
 const dataModules = import.meta.glob('../data/*.js', { eager: true })
+
+const topicTintColors = {
+  emerald: '16, 185, 129',
+  cyan: '6, 182, 212',
+  violet: '139, 92, 246',
+  yellow: '234, 179, 8',
+  pink: '236, 72, 153',
+  orange: '249, 115, 22',
+  teal: '20, 184, 166',
+  blue: '59, 130, 246',
+  lime: '132, 204, 22',
+  rose: '244, 63, 94',
+  red: '239, 68, 68',
+  slate: '148, 163, 184',
+}
 
 function getTopicData(id) {
   const key = `../data/${id}.js`
@@ -133,11 +149,19 @@ function TopicPage() {
 
   const Icon = topic.icon
   const isCollapsed = viewMode === 'collapsed'
+  const tintRgb = topicTintColors[topic.color] || topicTintColors.emerald
 
   return (
+    <>
+    <ReadingProgress color={tintRgb} />
     <DocLayout sections={data.sections}>
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-2">
+      <div className="relative overflow-hidden mb-10">
+        <div
+          className="absolute -top-20 -left-20 w-[400px] h-[200px] rounded-full blur-3xl pointer-events-none"
+          style={{ background: `radial-gradient(circle, rgba(${tintRgb}, 0.04) 0%, transparent 70%)` }}
+          aria-hidden="true"
+        />
+        <div className="relative flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <Icon size={28} className="text-text-sub" />
             <h1 className="text-3xl font-bold">{data.name}</h1>
@@ -166,8 +190,8 @@ function TopicPage() {
             )}
           </button>
         </div>
-        <p className="text-text-sub">{data.description}</p>
-        <p className="text-sm text-text-muted mt-1">{data.sections.length} sections</p>
+        <p className="relative text-text-sub">{data.description}</p>
+        <p className="relative text-sm text-text-muted mt-1">{data.sections.length} sections</p>
       </div>
       {data.sections.map((section, index) => (
         <SectionRenderer
@@ -203,6 +227,7 @@ function TopicPage() {
         </div>
       )}
     </DocLayout>
+    </>
   )
 }
 
