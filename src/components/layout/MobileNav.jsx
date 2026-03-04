@@ -25,9 +25,10 @@ function MobileNav({ sections }) {
 
   const handleSelect = (id) => {
     setOpen(false)
-    // Small delay so drawer closes before scroll
+    // Update hash to trigger TopicPage's hashchange listener,
+    // which expands the section and scrolls to it
     requestAnimationFrame(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+      window.location.hash = id
     })
   }
 
