@@ -1,6 +1,30 @@
 import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database, Shield, FlaskConical, GitBranch, Cpu } from 'lucide-react'
 
-const frameworks = [
+const topics = [
+  // ─── Full Stack ─────────────────────────────────────────────────
+  {
+    id: 'mern',
+    name: 'MERN Stack',
+    description: 'Full-stack MongoDB, Express, React, Node.js project patterns',
+    icon: Layers,
+    color: 'violet',
+  },
+  // ─── Frontend ───────────────────────────────────────────────────
+  {
+    id: 'react',
+    name: 'React.js',
+    description: 'A JavaScript library for building user interfaces with components',
+    icon: Atom,
+    color: 'cyan',
+  },
+  // ─── Backend ────────────────────────────────────────────────────
+  {
+    id: 'nodejs',
+    name: 'Node.js',
+    description: 'Core Node.js concepts, event loop, streams, file system, and runtime fundamentals',
+    icon: Cpu,
+    color: 'lime',
+  },
   {
     id: 'express',
     name: 'Express.js',
@@ -9,19 +33,13 @@ const frameworks = [
     color: 'emerald',
   },
   {
-    id: 'react',
-    name: 'React.js',
-    description: 'A JavaScript library for building user interfaces with components',
-    icon: Atom,
-    color: 'cyan',
+    id: 'databases',
+    name: 'Databases with Express.js',
+    description: 'SQL & NoSQL database patterns, ORMs, query builders, and connection management',
+    icon: Database,
+    color: 'teal',
   },
-  {
-    id: 'mern',
-    name: 'MERN Stack',
-    description: 'Full-stack MongoDB, Express, React, Node.js project patterns',
-    icon: Layers,
-    color: 'violet',
-  },
+  // ─── Languages ──────────────────────────────────────────────────
   {
     id: 'javascript',
     name: 'JavaScript & OOP',
@@ -36,13 +54,22 @@ const frameworks = [
     icon: Shield,
     color: 'blue',
   },
+  // ─── Web Fundamentals ──────────────────────────────────────────
   {
-    id: 'nodejs',
-    name: 'Node.js',
-    description: 'Core Node.js concepts, event loop, streams, file system, and runtime fundamentals',
-    icon: Cpu,
-    color: 'lime',
+    id: 'html',
+    name: 'HTML Semantic',
+    description: 'Semantic elements, accessibility, forms, meta tags, and structured markup',
+    icon: FileCode,
+    color: 'orange',
   },
+  {
+    id: 'css',
+    name: 'Advanced CSS',
+    description: 'Sass architecture, BEM, responsive design, Grid, Flexbox, and animations',
+    icon: Paintbrush,
+    color: 'pink',
+  },
+  // ─── Tooling ────────────────────────────────────────────────────
   {
     id: 'testing',
     name: 'Testing',
@@ -57,27 +84,6 @@ const frameworks = [
     icon: GitBranch,
     color: 'red',
   },
-  {
-    id: 'css',
-    name: 'Advanced CSS',
-    description: 'Sass architecture, BEM, responsive design, Grid, Flexbox, and animations',
-    icon: Paintbrush,
-    color: 'pink',
-  },
-  {
-    id: 'html',
-    name: 'HTML Semantic',
-    description: 'Semantic elements, accessibility, forms, meta tags, and structured markup',
-    icon: FileCode,
-    color: 'orange',
-  },
-  {
-    id: 'databases',
-    name: 'Databases with Express.js',
-    description: 'SQL & NoSQL database patterns, ORMs, query builders, and connection management',
-    icon: Database,
-    color: 'teal',
-  },
 ]
 
-export default frameworks
+export default topics

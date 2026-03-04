@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useState, useMemo, useEffect, useCallback, useTransition } from 'react'
 import { ListCollapse, List, Loader2 } from 'lucide-react'
-import frameworks from '../data/frameworks'
+import topics from '../data/frameworks'
 import DocLayout from '../components/layout/DocLayout'
 import SectionRenderer from '../components/ui/SectionRenderer'
 import NotFoundPage from './NotFoundPage'
@@ -17,7 +17,7 @@ function getFrameworkData(id) {
 
 function FrameworkPage() {
   const { frameworkId } = useParams()
-  const framework = frameworks.find((fw) => fw.id === frameworkId)
+  const framework = topics.find((fw) => fw.id === frameworkId)
   const data = useMemo(() => getFrameworkData(frameworkId), [frameworkId])
 
   const [viewMode, setViewMode] = useState(() => {

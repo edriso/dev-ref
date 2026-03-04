@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Code } from 'lucide-react'
-import frameworks from '../data/frameworks'
+import topics from '../data/frameworks'
 
 const dataModules = import.meta.glob('../data/*.js', { eager: true })
 
@@ -59,6 +59,34 @@ const colorMap = {
     hoverText: 'group-hover:text-teal-400',
     badge: 'bg-teal-500/10 text-teal-400',
   },
+  blue: {
+    iconBg: 'bg-blue-500/10',
+    iconText: 'text-blue-400',
+    hoverBorder: 'hover:border-blue-500/50',
+    hoverText: 'group-hover:text-blue-400',
+    badge: 'bg-blue-500/10 text-blue-400',
+  },
+  lime: {
+    iconBg: 'bg-lime-500/10',
+    iconText: 'text-lime-400',
+    hoverBorder: 'hover:border-lime-500/50',
+    hoverText: 'group-hover:text-lime-400',
+    badge: 'bg-lime-500/10 text-lime-400',
+  },
+  rose: {
+    iconBg: 'bg-rose-500/10',
+    iconText: 'text-rose-400',
+    hoverBorder: 'hover:border-rose-500/50',
+    hoverText: 'group-hover:text-rose-400',
+    badge: 'bg-rose-500/10 text-rose-400',
+  },
+  red: {
+    iconBg: 'bg-red-500/10',
+    iconText: 'text-red-400',
+    hoverBorder: 'hover:border-red-500/50',
+    hoverText: 'group-hover:text-red-400',
+    badge: 'bg-red-500/10 text-red-400',
+  },
 }
 
 function HomePage() {
@@ -71,16 +99,16 @@ function HomePage() {
         <h1 className="text-4xl font-bold mb-4">Best Practice Code</h1>
         <p className="text-lg text-text-sub max-w-2xl mx-auto">
           A personal reference for best practices, folder structures, conventions,
-          packages, and code patterns for web frameworks.
+          packages, and code patterns for web development.
         </p>
       </div>
 
       <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-6">
-        Frameworks
+        Topics
       </h2>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {frameworks.map((fw) => {
+        {topics.map((fw) => {
           const Icon = fw.icon
           const colors = colorMap[fw.color] || colorMap.emerald
           const sectionCount = getSectionCount(fw.id)
