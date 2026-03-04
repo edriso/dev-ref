@@ -1,4 +1,4 @@
-import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database } from 'lucide-react'
+import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database, Shield, FlaskConical, GitBranch, Cpu } from 'lucide-react'
 
 const frameworks = [
   {
@@ -28,6 +28,34 @@ const frameworks = [
     description: 'Core JavaScript patterns, OOP, async programming, and modern syntax',
     icon: Braces,
     color: 'yellow',
+  },
+  {
+    id: 'typescript',
+    name: 'TypeScript',
+    description: 'Type safety, interfaces, generics, and TypeScript patterns for React and Express',
+    icon: Shield,
+    color: 'blue',
+  },
+  {
+    id: 'nodejs',
+    name: 'Node.js',
+    description: 'Core Node.js concepts, event loop, streams, file system, and runtime fundamentals',
+    icon: Cpu,
+    color: 'lime',
+  },
+  {
+    id: 'testing',
+    name: 'Testing',
+    description: 'Unit testing, integration testing, and E2E testing patterns for MERN applications',
+    icon: FlaskConical,
+    color: 'rose',
+  },
+  {
+    id: 'git',
+    name: 'Git & GitHub',
+    description: 'Version control workflows, branching strategies, and GitHub collaboration patterns',
+    icon: GitBranch,
+    color: 'red',
   },
   {
     id: 'css',
