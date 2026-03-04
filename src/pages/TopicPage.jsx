@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useState, useMemo, useEffect, useCallback, useTransition } from 'react'
 import { ListCollapse, List, Loader2 } from 'lucide-react'
-import topics from '../data/frameworks'
+import topics from '../data/topics'
 import DocLayout from '../components/layout/DocLayout'
 import SectionRenderer from '../components/ui/SectionRenderer'
 import NotFoundPage from './NotFoundPage'
@@ -10,15 +10,15 @@ const STORAGE_KEY = 'viewMode'
 
 const dataModules = import.meta.glob('../data/*.js', { eager: true })
 
-function getFrameworkData(id) {
+function getTopicData(id) {
   const key = `../data/${id}.js`
   return dataModules[key]?.default
 }
 
-function FrameworkPage() {
-  const { frameworkId } = useParams()
-  const framework = topics.find((fw) => fw.id === frameworkId)
-  const data = useMemo(() => getFrameworkData(frameworkId), [frameworkId])
+function TopicPage() {
+  const { topicId } = useParams()
+  const topic = topics.find((t) => t.id === topicId)
+  const data = useMemo(() => getTopicData(topicId), [topicId])
 
   const [viewMode, setViewMode] = useState(() => {
     try {
@@ -32,7 +32,7 @@ function FrameworkPage() {
     () => data?.sections[0]?.id || null
   )
 
-  // Reset expanded section when switching frameworks
+  // Reset expanded section when switching topics
   useEffect(() => {
     if (data) {
       setExpandedSection(data.sections[0]?.id || null)
@@ -87,11 +87,11 @@ function FrameworkPage() {
     })
   }, [])
 
-  if (!framework || !data) {
+  if (!topic || !data) {
     return <NotFoundPage />
   }
 
-  const Icon = framework.icon
+  const Icon = topic.icon
   const isCollapsed = viewMode === 'collapsed'
 
   return (
@@ -142,4 +142,4 @@ function FrameworkPage() {
   )
 }
 
-export default FrameworkPage
+export default TopicPage

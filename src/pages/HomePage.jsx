@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Code } from 'lucide-react'
-import topics from '../data/frameworks'
+import topics from '../data/topics'
 
 const dataModules = import.meta.glob('../data/*.js', { eager: true })
 

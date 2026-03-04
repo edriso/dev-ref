@@ -1,6 +1,6 @@
 # Best Practice Code
 
-A personal reference web app — a "cheat sheet" site for quickly looking up best practices, folder structures, conventions, packages, and code patterns for web frameworks.
+A personal reference web app — a "cheat sheet" site for quickly looking up best practices, folder structures, conventions, packages, and code patterns for web development.
 
 ## Tech Stack
 
@@ -12,9 +12,9 @@ A personal reference web app — a "cheat sheet" site for quickly looking up bes
 
 ## Architecture
 
-**Data-driven content**: Each framework's docs live as structured data objects in `src/data/[framework].js`. Reusable UI components render any content type (code blocks, folder trees, package lists, tips).
+**Data-driven content**: Each topic's docs live as structured data objects in `src/data/[topic].js`. Reusable UI components render any content type (code blocks, folder trees, package lists, tips).
 
-Adding a new framework = one new data file in `src/data/` + one entry in `src/data/frameworks.js`.
+Adding a new topic = one new data file in `src/data/` + one entry in `src/data/topics.js`.
 
 ## Project Structure
 
@@ -40,7 +40,7 @@ src/
       ScrollToTop.jsx         # Scroll to top on route change
 
   data/
-    frameworks.js             # Registry: { id, name, description, icon, color }
+    topics.js             # Registry: { id, name, description, icon, color }
     express.js                # Express.js content (17 sections)
     react.js                  # React.js content (17 sections)
     mern.js                   # MERN Stack content (16 sections)
@@ -54,8 +54,8 @@ src/
     databases.js              # Databases with Express.js content (16 sections)
 
   pages/
-    HomePage.jsx              # Landing with framework cards
-    FrameworkPage.jsx         # Renders sections from data
+    HomePage.jsx              # Landing with topic cards
+    TopicPage.jsx         # Renders sections from data
     NotFoundPage.jsx          # 404
 
   hooks/
@@ -65,14 +65,14 @@ src/
 ## Routes
 
 - `/` → HomePage
-- `/:frameworkId` → FrameworkPage (e.g. `/express`)
+- `/:topicId` → TopicPage (e.g. `/express`, `/react`, `/git`)
 - `*` → NotFoundPage
 
 Sections use `#hash` navigation (smooth scroll), not nested routes.
 
 ## Content Data Format
 
-Each framework data file exports:
+Each topic data file exports:
 
 ```js
 export default {
