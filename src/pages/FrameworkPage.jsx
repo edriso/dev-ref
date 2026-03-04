@@ -69,7 +69,14 @@ function FrameworkPage() {
   }, [viewMode])
 
   const handleToggleSection = useCallback((sectionId) => {
-    setExpandedSection((prev) => (prev === sectionId ? null : sectionId))
+    setExpandedSection((prev) => {
+      if (prev === sectionId) return null
+      // Scroll to the section after it expands
+      requestAnimationFrame(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
+      })
+      return sectionId
+    })
   }, [])
 
   const toggleViewMode = useCallback(() => {
