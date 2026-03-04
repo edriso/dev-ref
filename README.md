@@ -56,6 +56,17 @@ npm run dev
 2. Add an entry to `src/data/topics.js`
 3. Done — routes, sidebar, and search are auto-generated
 
+### How auto-generation works
+
+Every part of the app uses Vite's `import.meta.glob('../data/*.js', { eager: true })` to dynamically discover all data files at build time:
+
+- **Routing** — `App.jsx` has a single `/:topicId` route. `TopicPage` reads the URL param, finds the matching topic in `topics.js`, and loads the corresponding data file from the glob result.
+- **Sidebar & Mobile Nav** — `DocLayout` passes `data.sections` to `Sidebar` and `MobileNav`, which render the table of contents from the sections array.
+- **Search** — `SearchModal` builds a search index by iterating over all topics and their sections from the same glob import.
+- **Homepage Cards** — `HomePage` uses the glob to count sections per topic and display topic cards.
+
+Add a new `.js` file to `src/data/` + register it in `topics.js`, and Vite's glob picks it up automatically — no new routes, components, or imports needed.
+
 ## Project Structure
 
 ```
