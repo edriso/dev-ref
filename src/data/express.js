@@ -3605,6 +3605,201 @@ export async function sendWebhook(url, data, secret) {
         },
       ],
     },
+    {
+      id: 'ai-integration',
+      title: 'AI / LLM Integration',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'Integrating AI (ChatGPT, Claude, Gemini) into your Express backend is increasingly a standard feature. You call an AI provider\'s API from your server (never directly from the frontend — that exposes your API key) and stream the response back to the client.',
+        },
+        {
+          type: 'heading',
+          content: 'Why Call AI from the Backend?',
+        },
+        {
+          type: 'list',
+          items: [
+            'Security — your API key stays on the server, never exposed to browser users',
+            'Rate limiting — you control how many AI requests each user can make',
+            'Cost control — log usage, limit tokens, cache repeated prompts',
+            'Data enrichment — combine AI output with your own database before returning it',
+            'Provider flexibility — swap OpenAI for Claude/Gemini without touching the frontend',
+          ],
+        },
+        {
+          type: 'code',
+          language: 'bash',
+          fileName: 'terminal',
+          code: `npm install openai          # OpenAI (GPT-4, GPT-4o, etc.)
+npm install @anthropic-ai/sdk  # Anthropic (Claude)`,
+        },
+        {
+          type: 'heading',
+          content: 'Basic Chat Endpoint (OpenAI)',
+        },
+        {
+          type: 'code',
+          language: 'js',
+          fileName: 'aiRoutes.js',
+          code: `import OpenAI from 'openai';
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// POST /api/ai/chat
+router.post('/chat', authenticate, async (req, res) => {
+  const { messages } = req.body; // array of { role, content } objects
+
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ message: 'messages array required' });
+  }
+
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',  // cheaper and fast — good default
+    messages: [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      ...messages,
+    ],
+    max_tokens: 1000,
+  });
+
+  res.json({
+    reply: completion.choices[0].message.content,
+    usage: completion.usage, // prompt_tokens, completion_tokens
+  });
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'Streaming AI Responses (SSE)',
+        },
+        {
+          type: 'text',
+          content:
+            'Streaming sends each word as it is generated instead of waiting for the full response. This makes the UI feel much more responsive — users see text appearing word by word like in ChatGPT.',
+        },
+        {
+          type: 'code',
+          language: 'js',
+          fileName: 'aiStream.js',
+          code: `// Backend — stream OpenAI response as Server-Sent Events
+router.post('/chat/stream', authenticate, async (req, res) => {
+  const { messages } = req.body;
+
+  // Set SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const stream = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      ...messages,
+    ],
+    stream: true, // enable streaming
+  });
+
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content;
+    if (content) {
+      // Send each token as an SSE event
+      res.write(\`data: \${JSON.stringify({ content })}\n\n\`);
+    }
+  }
+
+  res.write('data: [DONE]\n\n');
+  res.end();
+});`,
+        },
+        {
+          type: 'code',
+          language: 'jsx',
+          fileName: 'ChatComponent.jsx',
+          code: `// Frontend — consume the SSE stream
+async function sendMessage(messages, onChunk) {
+  const res = await fetch('/api/ai/chat/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
+  });
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    const text = decoder.decode(value);
+    const lines = text.split('\n').filter((l) => l.startsWith('data: '));
+
+    for (const line of lines) {
+      const data = line.replace('data: ', '');
+      if (data === '[DONE]') return;
+
+      const { content } = JSON.parse(data);
+      onChunk(content); // append each word to UI state
+    }
+  }
+}
+
+function Chat() {
+  const [reply, setReply] = useState('');
+
+  const handleSend = async () => {
+    setReply('');
+    await sendMessage(
+      [{ role: 'user', content: 'Explain async/await in one sentence.' }],
+      (chunk) => setReply((prev) => prev + chunk)
+    );
+  };
+
+  return (
+    <div>
+      <button onClick={handleSend}>Ask AI</button>
+      <p>{reply}</p>
+    </div>
+  );
+}`,
+        },
+        {
+          type: 'heading',
+          content: 'Rate Limiting AI Endpoints',
+        },
+        {
+          type: 'code',
+          language: 'js',
+          fileName: 'aiRateLimiter.js',
+          code: `import rateLimit from 'express-rate-limit';
+
+// AI calls are expensive — limit them more aggressively than normal endpoints
+const aiRateLimiter = rateLimit({
+  windowMs: 60 * 1000,  // 1 minute
+  max: 10,              // 10 AI requests per minute per IP
+  message: { message: 'Too many AI requests, slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post('/chat', authenticate, aiRateLimiter, aiController.chat);
+router.post('/chat/stream', authenticate, aiRateLimiter, aiController.stream);`,
+        },
+        {
+          type: 'tip',
+          variant: 'warning',
+          content:
+            'Never put your OpenAI/Claude API key in the frontend — it will be visible to anyone who opens DevTools. Always proxy AI requests through your backend. Track token usage and set hard budget limits in your provider dashboard to avoid surprise bills.',
+        },
+        {
+          type: 'tip',
+          variant: 'tip',
+          content:
+            'Use gpt-4o-mini or claude-haiku-4-5 as your default model — they are 10-20x cheaper than the flagship models and handle most tasks equally well. Only upgrade to GPT-4o or Claude Sonnet when you need complex reasoning or better instruction following.',
+        },
+      ],
+    },
   ],
 }
 

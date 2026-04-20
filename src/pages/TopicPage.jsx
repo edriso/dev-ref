@@ -26,6 +26,7 @@ const topicTintColors = {
   red: '239, 68, 68',
   slate: '148, 163, 184',
   indigo: '99, 102, 241',
+  fuchsia: '217, 70, 239',
 }
 
 function getTopicData(id) {

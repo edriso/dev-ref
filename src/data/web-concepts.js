@@ -1303,6 +1303,241 @@ CMD ["node", "server.js"]`,
         },
       ],
     },
+    {
+      id: 'microservices-vs-monolith',
+      title: 'Microservices vs Monolith',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'When building a backend, you decide how to structure your services. A monolith is one big application. Microservices splits it into many small, independent services. As a junior developer you will almost always start with a monolith — and that is the right call.',
+        },
+        {
+          type: 'heading',
+          content: 'Monolith — One Big App',
+        },
+        {
+          type: 'list',
+          items: [
+            'Everything lives in one codebase and one deployable unit (your Express app)',
+            'Simpler to develop, test, debug, and deploy — one git repo, one server, one database',
+            'No network overhead between features — function calls are instant',
+            'Easy to refactor — rename a function and update all callers in the same project',
+            'When it gets slow, you vertically scale (bigger server) or add caching',
+          ],
+        },
+        {
+          type: 'heading',
+          content: 'Microservices — Many Small Apps',
+        },
+        {
+          type: 'list',
+          items: [
+            'Split by business domain: auth-service, payment-service, notification-service, product-service',
+            'Each service has its own codebase, database, and deployment pipeline',
+            'Services communicate via HTTP (REST/GraphQL), gRPC, or message queues (RabbitMQ, Kafka)',
+            'Scales independently — if payments are slow, scale only the payment service',
+            'Different services can use different tech stacks (Node.js + Python + Go)',
+          ],
+        },
+        {
+          type: 'heading',
+          content: 'The Hidden Cost of Microservices',
+        },
+        {
+          type: 'list',
+          items: [
+            'Distributed systems are hard — network calls fail, services go down, you need retries and timeouts',
+            'You need Docker, Kubernetes, service discovery, API gateways, distributed tracing, and centralized logging',
+            'A bug might span 3 services — debugging is much harder than a monolith',
+            'Local development gets complex — you need all services running simultaneously',
+            'Data consistency is harder — no single transaction across multiple databases',
+          ],
+        },
+        {
+          type: 'heading',
+          content: 'Communication Between Services',
+        },
+        {
+          type: 'list',
+          items: [
+            'Synchronous (REST/gRPC) — Service A calls Service B and waits for a response. Simple but fragile if B is slow/down',
+            'Asynchronous (Message Queue) — Service A publishes an event, Service B processes it when ready. More resilient',
+            'Message Queue tools — RabbitMQ (simple), Apache Kafka (high-throughput, event streaming)',
+            'API Gateway — single entry point that routes requests to the right service (Kong, AWS API Gateway)',
+          ],
+        },
+        {
+          type: 'tip',
+          variant: 'warning',
+          content:
+            'Most startups and small teams should not use microservices. Start with a well-structured monolith. Netflix, Uber, and Amazon switched to microservices after their monoliths became unmanageable at massive scale — not at day one. "Monolith first" is the pragmatic default.',
+        },
+        {
+          type: 'tip',
+          variant: 'tip',
+          content:
+            'A "modular monolith" is a great middle ground — one deployable app but with strict internal module boundaries (auth module, payment module, notifications module). Each module has its own folder, models, and routes. Easy to split into microservices later if needed.',
+        },
+      ],
+    },
+    {
+      id: 'monitoring-error-tracking',
+      title: 'Monitoring & Error Tracking',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'In production, bugs happen silently — no one is watching the terminal. Monitoring tools alert you when something breaks, track errors automatically, and show you performance data so you can fix issues before users complain.',
+        },
+        {
+          type: 'heading',
+          content: 'Error Tracking with Sentry',
+        },
+        {
+          type: 'text',
+          content:
+            'Sentry captures unhandled errors in your app, sends you alerts, and shows you the full stack trace, browser info, and user context. It\'s the industry standard for error monitoring.',
+        },
+        {
+          type: 'code',
+          language: 'bash',
+          fileName: 'terminal',
+          code: `npm install @sentry/node           # Express/Node.js
+npm install @sentry/react          # React frontend`,
+        },
+        {
+          type: 'code',
+          language: 'js',
+          fileName: 'server.js',
+          code: `import * as Sentry from '@sentry/node';
+
+// Initialize BEFORE your routes (at the very top of server.js)
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV, // 'production', 'staging', etc.
+  tracesSampleRate: 0.1,             // capture 10% of requests for performance
+});
+
+// Add request context to all errors
+app.use(Sentry.Handlers.requestHandler());
+
+// Your routes here...
+app.get('/users', userController.getAll);
+
+// Error handler MUST come after all routes
+app.use(Sentry.Handlers.errorHandler());
+
+// Sentry automatically captures any unhandled errors and sends alerts
+// You can also capture manually:
+try {
+  riskyOperation();
+} catch (err) {
+  Sentry.captureException(err);
+  res.status(500).json({ message: 'Internal server error' });
+}`,
+        },
+        {
+          type: 'code',
+          language: 'jsx',
+          fileName: 'main.jsx',
+          code: `import * as Sentry from '@sentry/react';
+
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  environment: import.meta.env.MODE,
+  tracesSampleRate: 0.1,
+  // Wrap your router for navigation tracking
+  integrations: [Sentry.reactRouterV6BrowserTracingIntegration()],
+});
+
+// Wrap your app in Sentry's ErrorBoundary for React errors
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <Sentry.ErrorBoundary fallback={<p>Something went wrong.</p>}>
+    <App />
+  </Sentry.ErrorBoundary>
+);`,
+        },
+        {
+          type: 'heading',
+          content: 'Health Check Endpoints',
+        },
+        {
+          type: 'text',
+          content:
+            'A health check endpoint lets your hosting platform (Railway, Render, Kubernetes) know your server is alive and ready to accept traffic. If it fails, the platform restarts your service automatically.',
+        },
+        {
+          type: 'code',
+          language: 'js',
+          fileName: 'healthRoutes.js',
+          code: `import mongoose from 'mongoose';
+
+// Simple liveness check — is the server running?
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// Readiness check — is the server ready to serve traffic?
+router.get('/health/ready', async (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  // 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
+
+  if (dbState !== 1) {
+    return res.status(503).json({ status: 'error', db: 'disconnected' });
+  }
+
+  res.json({
+    status: 'ok',
+    db: 'connected',
+    memory: process.memoryUsage(),
+    uptime: process.uptime(),
+  });
+});`,
+        },
+        {
+          type: 'heading',
+          content: 'What to Monitor',
+        },
+        {
+          type: 'list',
+          items: [
+            'Error rate — percentage of requests returning 5xx errors (alert if > 1%)',
+            'Response time — P95 latency (95th percentile). Alert if > 2 seconds',
+            'Uptime — is your server reachable? UptimeRobot is free and pings every 5 minutes',
+            'Memory usage — Node.js memory leaks cause gradual slowdowns before crashing',
+            'Database query times — slow queries are usually the bottleneck in MERN apps',
+            'Error logs — centralize logs with Winston + a log aggregator (Logtail, Papertrail)',
+          ],
+        },
+        {
+          type: 'package-list',
+          packages: [
+            {
+              name: '@sentry/node',
+              description: 'Error tracking for Node.js/Express — captures exceptions, sends alerts, shows full context',
+              url: 'https://docs.sentry.io/platforms/javascript/guides/express',
+            },
+            {
+              name: '@sentry/react',
+              description: 'Error boundary + performance monitoring for React — free tier handles most projects',
+              url: 'https://docs.sentry.io/platforms/javascript/guides/react',
+            },
+            {
+              name: 'pino',
+              description: 'Very fast JSON logger for Node.js — better than Winston for structured logging',
+              url: 'https://getpino.io',
+            },
+          ],
+        },
+        {
+          type: 'tip',
+          variant: 'tip',
+          content:
+            'Set up Sentry on day one, not after your first production incident. The free tier supports 5,000 errors/month which is plenty for personal projects and small startups. It takes 10 minutes to add and will save hours of debugging.',
+        },
+      ],
+    },
   ],
 }
 

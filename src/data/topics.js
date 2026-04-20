@@ -1,4 +1,4 @@
-import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database, Shield, FlaskConical, GitBranch, Cpu, Globe, Network } from 'lucide-react'
+import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database, Shield, FlaskConical, GitBranch, Cpu, Globe, Network, Share2 } from 'lucide-react'
 
 const topics = [
   // ─── Full Stack ─────────────────────────────────────────────────
@@ -51,6 +51,14 @@ const topics = [
     icon: Database,
     color: 'teal',
     related: ['express', 'mern', 'nodejs'],
+  },
+  {
+    id: 'graphql',
+    name: 'GraphQL',
+    description: 'Query language for your API — flexible, typed schema, one endpoint, client-specified data',
+    icon: Share2,
+    color: 'fuchsia',
+    related: ['express', 'react', 'nodejs', 'typescript'],
   },
   // ─── Languages ──────────────────────────────────────────────────
   {
