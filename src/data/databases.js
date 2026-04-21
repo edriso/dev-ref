@@ -49,7 +49,198 @@ Best For           │ Complex relations, reporting  │ Rapid iteration, nested
       ],
     },
 
-    // ─── Section 2: Database Packages & Tools ──────────────────────────
+    // ─── Section 2: When to Use Each Database ─────────────────────────
+    {
+      id: 'when-to-use',
+      title: 'When to Use Each Database',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'Every database has a sweet spot. This guide maps each option to real-world use cases so you can make a deliberate choice rather than defaulting to whatever you used last time.',
+        },
+        {
+          type: 'heading',
+          content: 'Decision Guide',
+        },
+        {
+          type: 'list',
+          items: [
+            'Need auth + storage + realtime out of the box on a hosted PostgreSQL? → Supabase',
+            'Need relational data, complex queries, or financial integrity? → PostgreSQL',
+            'Building a Node.js/PHP app on a LAMP/LEMP-style stack or need high read throughput? → MySQL',
+            'Prototyping, desktop app, CLI tool, or need zero-setup embedded storage? → SQLite',
+            'Data is document-like, schema varies per record, or you need horizontal sharding? → MongoDB',
+            'Need caching, sessions, rate limiting, pub/sub, or ephemeral real-time data? → Redis',
+            'Not sure? → PostgreSQL. It handles relational, JSON, full-text, and geospatial in one engine.',
+          ],
+        },
+        {
+          type: 'heading',
+          content: 'PostgreSQL',
+        },
+        {
+          type: 'code',
+          language: 'sql',
+          fileName: 'postgresql-use-cases.md',
+          code: `Best for
+────────────────────────────────────────────────────────────────────
+✓ E-commerce            — orders, products, inventory, payments
+✓ SaaS / multi-tenant   — row-level security, complex schemas
+✓ Fintech               — ACID transactions, audit logs, reporting
+✓ Analytics dashboards  — CTEs, window functions, aggregations
+✓ Social platforms      — users, posts, follows, likes (relational graph)
+✓ APIs with filtering   — full-text search, JSONB, GIN indexes
+✓ Any "I'm not sure"    — handles SQL + JSON + geo in one engine
+
+Avoid when
+────────────────────────────────────────────────────────────────────
+✗ You need horizontal auto-sharding across many nodes
+✗ Data is truly schema-less and changes every week
+✗ Ultra-low-latency in-memory access (use Redis alongside it)`,
+        },
+        {
+          type: 'heading',
+          content: 'MySQL',
+        },
+        {
+          type: 'code',
+          language: 'sql',
+          fileName: 'mysql-use-cases.md',
+          code: `Best for
+────────────────────────────────────────────────────────────────────
+✓ LAMP/LEMP stacks      — WordPress, Drupal, legacy PHP apps
+✓ Read-heavy web apps   — high-throughput SELECT with replication
+✓ Shared hosting        — widely supported by budget hosts
+✓ Simple CRUD apps      — blogs, portfolios, small business sites
+✓ Existing MySQL infra  — team/ops already knows MySQL
+
+Avoid when
+────────────────────────────────────────────────────────────────────
+✗ Complex JOIN-heavy reporting (PostgreSQL window functions are better)
+✗ JSON-heavy queries (PostgreSQL's jsonb is more capable)
+✗ You need partial indexes or advanced index types`,
+        },
+        {
+          type: 'heading',
+          content: 'SQLite',
+        },
+        {
+          type: 'code',
+          language: 'sql',
+          fileName: 'sqlite-use-cases.md',
+          code: `Best for
+────────────────────────────────────────────────────────────────────
+✓ Local-first desktop apps   — Electron, Tauri, native apps
+✓ CLI tools & scripts        — single-file DB, zero setup
+✓ Embedded devices / IoT     — runs anywhere, no server
+✓ Dev & test environments    — spin up a real DB in-process
+✓ Read-heavy static sites    — query a bundled .db file
+✓ Edge / serverless          — Cloudflare D1, Turso (libSQL)
+
+Avoid when
+────────────────────────────────────────────────────────────────────
+✗ Multiple concurrent writers (file-level locking limits throughput)
+✗ Multi-server deployments (each server needs its own copy)
+✗ Large datasets with complex queries (no query planner optimizations)`,
+        },
+        {
+          type: 'heading',
+          content: 'MongoDB',
+        },
+        {
+          type: 'code',
+          language: 'sql',
+          fileName: 'mongodb-use-cases.md',
+          code: `Best for
+────────────────────────────────────────────────────────────────────
+✓ CMS / blogging platforms   — flexible content types, nested data
+✓ User-generated content     — comments, reviews (variable structure)
+✓ Product catalogs           — electronics vs clothing have diff fields
+✓ Event logs / activity feeds — append-only, high write volume
+✓ IoT sensor data            — varied payload shapes per device type
+✓ Rapid prototyping          — iterate schema without migrations
+✓ Real-time chat history     — embed messages in conversation doc
+
+Avoid when
+────────────────────────────────────────────────────────────────────
+✗ Multi-table JOINs (no real JOIN — embed or use $lookup instead)
+✗ Financial data requiring strict ACID across multiple collections
+✗ Data is heavily relational (many many-to-many relationships)`,
+        },
+        {
+          type: 'heading',
+          content: 'Supabase',
+        },
+        {
+          type: 'code',
+          language: 'sql',
+          fileName: 'supabase-use-cases.md',
+          code: `Best for
+────────────────────────────────────────────────────────────────────
+✓ Next.js / SvelteKit apps   — built-in auth + DB + storage in one
+✓ MVPs & startups            — no infra to manage, generous free tier
+✓ Apps needing auth fast     — email, magic link, OAuth in minutes
+✓ Real-time collaboration    — subscribe to row changes via WebSocket
+✓ File uploads               — storage with RLS-based access control
+✓ Full-stack with RLS        — enforce data access rules at DB level
+✓ Replacing Firebase         — SQL power with Firebase-like DX
+
+Avoid when
+────────────────────────────────────────────────────────────────────
+✗ You need to self-host with strict data residency requirements
+✗ Extremely complex PostgreSQL extensions or custom configurations
+✗ The project outgrows hosted infra and needs raw PostgreSQL control`,
+        },
+        {
+          type: 'heading',
+          content: 'Redis',
+        },
+        {
+          type: 'code',
+          language: 'sql',
+          fileName: 'redis-use-cases.md',
+          code: `Best for
+────────────────────────────────────────────────────────────────────
+✓ API response caching       — store expensive query results in RAM
+✓ Session storage            — fast read/write, TTL auto-expiry
+✓ Rate limiting              — atomic INCR + TTL per IP / user
+✓ Job queues                 — push/pop with BullMQ or similar
+✓ Pub/sub messaging          — real-time notifications, chat rooms
+✓ Leaderboards               — sorted sets with O(log n) ops
+✓ Distributed locks          — SETNX for concurrency control
+✓ Feature flags / config     — in-memory key-value, sub-millisecond
+
+Avoid when
+────────────────────────────────────────────────────────────────────
+✗ Data must survive a full restart without persistence config (AOF/RDB)
+✗ Complex relational queries or reporting
+✗ Large blobs — Redis works best with small, frequently accessed values`,
+        },
+        {
+          type: 'heading',
+          content: 'Common Combination Patterns',
+        },
+        {
+          type: 'list',
+          items: [
+            'PostgreSQL + Redis — Core relational data in Postgres, cache hot queries and sessions in Redis. The most common production pairing.',
+            'Supabase + Redis (Upstash) — Supabase for auth/DB/storage, Upstash Redis for rate limiting and caching in Next.js Edge/serverless routes.',
+            'MongoDB + Redis — Document store for flexible content, Redis for session and pub/sub. Common in MERN stacks.',
+            'PostgreSQL + MongoDB — SQL for core transactional data, MongoDB for event logs or analytics where schema flexibility matters.',
+            'SQLite (dev) + PostgreSQL (prod) — Use SQLite locally for zero-setup development, swap to PostgreSQL in production via an ORM (Prisma, Drizzle).',
+          ],
+        },
+        {
+          type: 'tip',
+          variant: 'note',
+          content:
+            'Most production apps combine two databases: a primary store (PostgreSQL, MongoDB, or Supabase) for persistent data plus Redis for caching and ephemeral state. Adding a second database is not complexity for its own sake — it\'s each tool doing what it does best.',
+        },
+      ],
+    },
+
+    // ─── Section 3: Database Packages & Tools ──────────────────────────
     {
       id: 'database-packages',
       title: 'Database Packages & Tools',
