@@ -1,4 +1,4 @@
-import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database, Shield, FlaskConical, GitBranch, Cpu, Globe, Network, Share2 } from 'lucide-react'
+import { Server, Atom, Layers, Braces, Paintbrush, FileCode, Database, Shield, FlaskConical, GitBranch, Cpu, Globe, Network, Share2, Zap } from 'lucide-react'
 
 const topics = [
   // ─── Full Stack ─────────────────────────────────────────────────
@@ -51,6 +51,14 @@ const topics = [
     icon: Database,
     color: 'teal',
     related: ['express', 'mern', 'nodejs'],
+  },
+  {
+    id: 'supabase',
+    name: 'Supabase',
+    description: 'PostgreSQL database, auth, storage, realtime, and Next.js App Router integration',
+    icon: Zap,
+    color: 'emerald',
+    related: ['nextjs', 'databases', 'react', 'typescript'],
   },
   {
     id: 'graphql',
