@@ -2013,7 +2013,128 @@ describe('TourBooking', () => {
       ],
     },
 
-    // ─── Section 11: E2E Testing Basics ─────────────────────────────────
+    // ─── Section 11: Regression Testing ────────────────────────────────
+    {
+      id: 'regression-testing',
+      title: 'Regression Testing',
+      blocks: [
+        {
+          type: 'text',
+          content:
+            'A regression test is a test you write after finding a bug, to make sure that bug never comes back. The word "regression" means going backwards — a regression is when something that used to work breaks again. The test prevents that.',
+        },
+        {
+          type: 'heading',
+          content: 'The Workflow',
+        },
+        {
+          type: 'list',
+          items: [
+            '1. Find a bug in production or during development',
+            '2. Write a test that reproduces the bug — it should FAIL right now',
+            '3. Fix the code until the test passes',
+            '4. Keep the test forever — it now guards against that bug returning',
+          ],
+        },
+        {
+          type: 'heading',
+          content: 'Simple Example',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'Bug found: discount() returns negative price',
+          code: `// BUG: discount(5, 10) returns -5 instead of 0
+// Step 1: write a failing test BEFORE touching the code
+test('discount never makes price go negative', () => {
+  expect(discount(5, 10)).toBeGreaterThanOrEqual(0); // ❌ fails right now
+  expect(discount(0, 50)).toBe(0);
+  expect(discount(100, 10)).toBe(90);
+});
+
+// Step 2: fix the function
+function discount(price, amount) {
+  return Math.max(0, price - amount); // can't go below zero
+}
+
+// Step 3: test now passes ✅ — and stays as a permanent guard`,
+        },
+        {
+          type: 'heading',
+          content: 'Real-World Example — Coin System Bug',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'Bug: time bonus applied outside peak hours',
+          code: `// BUG: users were earning the time bonus even at 3am
+// The peak hours check had an off-by-one error
+
+// Step 1: write the regression test first
+describe('time bonus', () => {
+  it('should NOT award time bonus outside peak hours', () => {
+    const result = calculateCoins({ completedAt: new Date('2024-01-01T03:00:00') });
+    expect(result.timeBonus).toBe(false); // ❌ was failing — bug gave bonus at 3am
+  });
+
+  it('should award time bonus during morning peak (5–8 AM)', () => {
+    const result = calculateCoins({ completedAt: new Date('2024-01-01T06:00:00') });
+    expect(result.timeBonus).toBe(true); // should still pass after fix
+  });
+
+  it('should award time bonus during midday peak (10 AM–2 PM)', () => {
+    const result = calculateCoins({ completedAt: new Date('2024-01-01T12:00:00') });
+    expect(result.timeBonus).toBe(true);
+  });
+});
+
+// Step 2: fix the off-by-one in the peak hours check
+// Step 3: all tests pass — bug can never silently return`,
+        },
+        {
+          type: 'heading',
+          content: 'Why Write the Test Before the Fix?',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          fileName: 'Test-first catches false confidence',
+          code: `// If you fix first, then write the test:
+// → you can't be sure the test actually catches the bug
+// → you might write a test that always passes (testing the fix, not the bug)
+
+// If you write the test first and it FAILS:
+// → you proved the bug exists
+// → when the test passes, you proved the fix works
+// → the test is a reliable guard going forward`,
+        },
+        {
+          type: 'heading',
+          content: 'Regression Test Naming Convention',
+        },
+        {
+          type: 'code',
+          language: 'javascript',
+          code: `// Name the test so it's clear WHAT broke and WHY it was added
+// Bad:
+it('should work correctly', () => {});
+
+// Good — references the bug or the scenario that was broken:
+it('should not apply time bonus outside peak hours', () => {});
+it('should not allow price to go negative after discount', () => {});
+it('should reject enrollment when user already has an active course', () => {});
+it('should scope job queries to the authenticated user only', () => {});`,
+        },
+        {
+          type: 'tip',
+          variant: 'tip',
+          content:
+            'Keep all regression tests even after the bug is long fixed. They document real bugs that happened and make sure they never silently come back. A test file history that shows bug iterations (like PointSystemBugTest → PointSystemFinalTest in Pest) is not messy — it shows you debug systematically.',
+        },
+      ],
+    },
+
+    // ─── Section 12: E2E Testing Basics ─────────────────────────────────
     {
       id: 'e2e-testing',
       title: 'E2E Testing Basics',
@@ -2209,7 +2330,7 @@ npx playwright codegen localhost:5173`,
       ],
     },
 
-    // ─── Section 12: Test Configuration & CI ────────────────────────────
+    // ─── Section 13: Test Configuration & CI ────────────────────────────
     {
       id: 'config-ci',
       title: 'Test Configuration & CI',

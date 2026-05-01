@@ -53,7 +53,7 @@ src/
     typescript.js             # TypeScript content (14 sections)
     html.js                   # HTML Semantic content (11 sections)
     css.js                    # Advanced CSS content (13 sections)
-    testing.js                # Testing content (13 sections)
+    testing.js                # Testing content (14 sections)
     web-concepts.js           # Web Concepts content (15 sections)
     git.js                    # Git & GitHub content (13 sections)
 
